@@ -7,15 +7,13 @@ a global hotkey (Ctrl+Shift+S) for quick region selection.
 
 import os
 import sys
-import threading
 
 # Enable High DPI scaling BEFORE QApplication is created
 os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "1"
 os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "PassThrough"
 
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QMetaObject, Qt
 
 # Must be set before QApplication instantiation
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
@@ -33,19 +31,38 @@ def _register_hotkey(window: MainWindow):
     try:
         from pynput import keyboard
 
-        COMBO = {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.KeyCode.from_char('s')}
-        current_keys = set()
+        CTRL = {keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}
+        SHIFT = {keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r}
+        VK_S = 0x53
+        held = set()
+        fired = False
+
+        def is_s(key):
+            # With Ctrl held, Windows reports the char as '\x13', not 's',
+            # so match on the virtual-key code instead.
+            return getattr(key, "vk", None) == VK_S
 
         def on_press(key):
-            current_keys.add(key)
-            if COMBO.issubset(current_keys):
+            nonlocal fired
+            if key in CTRL:
+                held.add("ctrl")
+            elif key in SHIFT:
+                held.add("shift")
+            elif is_s(key) and held >= {"ctrl", "shift"} and not fired:
+                fired = True  # ignore key auto-repeat while held
                 # Schedule on the Qt event loop
                 QMetaObject.invokeMethod(
                     window, "open_region_selector", Qt.QueuedConnection
                 )
 
         def on_release(key):
-            current_keys.discard(key)
+            nonlocal fired
+            if key in CTRL:
+                held.discard("ctrl")
+            elif key in SHIFT:
+                held.discard("shift")
+            elif is_s(key):
+                fired = False
 
         listener = keyboard.Listener(on_press=on_press, on_release=on_release)
         listener.daemon = True

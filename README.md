@@ -5,62 +5,109 @@
 > Real-time screen OCR and translation tool for Windows.
 
 OmniTranslate captures any region on your screen, continuously extracts text
-via PaddleOCR, and translates it in real-time using a streaming LLM — all
-from a compact, always-on-top floating window with flicker-free updates.
+via PaddleOCR, and translates it in real-time using a streaming LLM.
 
 ## Features
 
 - **Region Selection** — draw a rectangle on screen to define the capture area
-- **Real-time OCR** — continuous text extraction using [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) PP-OCRv4/v3 (offline, 80+ languages)
-- **LLM Translation** — streaming translation via any OpenAI-compatible API (default: DeepSeek-chat)
+- **Real-time OCR** — continuous text extraction using [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) PP-OCRv4/v3 (offline, 10+ languages)
+- **15 Translation Engines** — free Google / Bing, DeepL, Azure, Baidu, Youdao, Tencent, Caiyun, and AI models (DeepSeek, OpenAI, Gemini, Qwen, Kimi, GLM, any OpenAI-compatible API), picked on the *Engine* tab
 - **Two Modes**:
   - *Reading Mode* — one-shot translation, best for static text
-  - *Real-time Mode* — context-aware incremental translation with flicker suppression, best for live subtitles
-- **Flicker-Free Updates** — three-level merge algorithm ensures the translation box never flashes
-- **Language Selection** — choose source and target languages from 30+ options
+  - *Real-time Mode* — context-aware incremental translation, best for live subtitles
+- **Language Selection** — choose source and target languages from 10+ options
 - **Copy to Clipboard** — one-click copy for both OCR and translated text
 - **Adjustable Interval** — control OCR frequency (500ms–3000ms)
 - **Global Hotkey** — `Ctrl+Shift+S` to trigger region selection from anywhere
-- **Debug Monitor** — built-in pipeline inspector for OCR/LLM/display diagnostics
+- **Debug Monitor** — hidden pipeline inspector for OCR/LLM/display diagnostics (press `F12`)
 - **Dark Theme** — Catppuccin Mocha aesthetic
 
 ## Requirements
 
 - Windows 10 / 11
 - Python 3.10+ (tested on 3.13)
-- Internet connection (for LLM translation; OCR works fully offline)
-- An OpenAI-compatible API key (e.g. DeepSeek, OpenAI, etc.)
+- Internet connection (for translation; OCR works fully offline)
+- Optional: an API key for DeepL / DeepSeek / OpenAI / another OpenAI-compatible service
 
 ## Installation
 
 ```bash
-# Clone / download the project
-cd e:\Projects\demo
+git clone https://github.com/Edolance/OmniTranslate.git
+cd OmniTranslate
 
-# Create virtual environment
+# Creates venv\ inside the project folder and installs dependencies
+setup.bat
+```
+
+All scripts use paths relative to the project folder, so it can be cloned or
+moved anywhere. To set it up by hand instead:
+
+```bash
 python -m venv venv
 .\venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-### API Configuration
+Optionally pre-download OCR models (otherwise they download on first use):
 
-Create a `.env` file in the project root:
-
-```env
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=https://api.deepseek.com   # or any OpenAI-compatible endpoint
-OPENAI_MODEL=deepseek-chat                  # optional, defaults to deepseek-chat
+```bash
+.\venv\Scripts\python.exe scripts\download_models.py
 ```
+
+### Translation Engine
+
+Open the **Engine** tab and tick one engine; its settings appear on the right:
+
+| Group | Engine | Needs |
+|---|---|---|
+| Free (no key) | Google Translate | nothing (may be rate-limited on some networks) |
+| | Microsoft Bing | nothing (≤ 1000 characters per request) |
+| Translation APIs | DeepL | API key (free `:fx` or Pro) |
+| | Microsoft Azure | key, optional region |
+| | Baidu Translate | APP ID + Secret Key |
+| | Youdao (NetEase) | App Key + App Secret |
+| | Tencent TMT | SecretId + SecretKey, optional region |
+| | Caiyun | token |
+| AI models | DeepSeek, OpenAI, Google Gemini, Qwen, Kimi, Zhipu GLM | API key, optional model |
+| | Custom | API key, Base URL, model (any OpenAI-compatible API) |
+
+Keys are saved per user in the Windows registry
+(`HKCU\Software\OmniTranslate`), not in the app folder, so sharing the folder
+never shares your keys. Real-time context (keeping the previous translation
+stable) only works with the LLM engines; Google and DeepL re-translate the
+full text each time.
+
+A `.env` file (see `.env.example`) is still read on first launch and imported
+into these settings, but it is no longer required.
 
 ## Usage
 
 ```bash
-.\venv\Scripts\activate
+run.bat
+```
+
+or, with the venv activated:
+
+```bash
 python run.py
 ```
+
+### Standalone exe
+
+`build_exe.bat` packages the app with PyInstaller into `dist\OmniTranslate\`
+(no Python needed on the target PC):
+
+```bash
+build_exe.bat
+```
+
+Copy the whole `dist\OmniTranslate\` folder anywhere, double-click
+`OmniTranslate.exe`, and pick an engine on the Engine tab. The downloaded OCR
+models are bundled in `.paddleocr\`; output is logged to `omnitranslate.log`
+in the same folder.
+
+To check a build without the GUI, run `OmniTranslate.exe --selftest`: it
+runs OCR once on a generated image and writes the result to the log.
 
 ### Workflow
 
@@ -149,10 +196,11 @@ other. Only `ui.main_window` imports from all three.
 |---|---|---|
 | GUI | PyQt5 | Window, overlay, widgets, threading |
 | Screen Capture | mss | Fast screenshot without disk I/O |
-| OCR | PaddleOCR (PaddlePaddle) | Offline OCR — PP-OCRv4 (zh/en), PP-OCRv3 (others) |
+| OCR | PaddleOCR (PaddlePaddle) | Offline OCR — PP-OCRv4 (zh/en), PP-OCRv5 (th), PP-OCRv3 (others) |
 | Translation | openai (Python SDK) | Streaming LLM via any OpenAI-compatible API |
 | Hotkey | pynput | Global keyboard listener |
-| Env Config | python-dotenv | `.env` file loading for API keys |
+| HTTP | requests | Google / DeepL translation calls |
+| Env Config | python-dotenv | Optional legacy `.env` import |
 
 ## Configuration
 
@@ -161,8 +209,8 @@ All runtime settings are controlled via the UI:
 | Setting | Control | Range / Options |
 |---|---|---|
 | OCR interval | Slider | 500ms – 3000ms |
-| Source language | Dropdown | Auto-detect + 30+ languages |
-| Target language | Dropdown | 30+ languages |
+| Source language | Dropdown | Auto-detect + 10+ languages |
+| Target language | Dropdown | 10+ languages |
 | Translation mode | Radio buttons | Reading / Real-time |
 | Window position | Drag | Always on top |
 

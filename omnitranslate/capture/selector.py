@@ -1,11 +1,13 @@
 """
 Region selector overlay.
 
-Provides a full-screen transparent overlay that lets the user draw a rectangle
-with the mouse to select a screen region. Emits ``region_selected`` with
-``(x, y, width, height)`` in screen coordinates when the selection finishes.
+Provides a transparent overlay on the active screen that lets the user draw a
+rectangle with the mouse to select a screen region. Emits ``region_selected``
+with ``(x, y, width, height)`` in screen coordinates when the selection finishes.
 Emits ``selection_done`` when the overlay closes for any reason.
 """
+
+from typing import Optional
 
 from PyQt5.QtCore import Qt, QPoint, QRect, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor, QPen, QCursor, QScreen
@@ -13,7 +15,7 @@ from PyQt5.QtWidgets import QWidget, QApplication
 
 
 class RegionSelector(QWidget):
-    """Full-screen transparent overlay for rubber-band region selection."""
+    """Transparent overlay for selecting a region on one physical screen."""
 
     # Emitted with (x, y, w, h) in *screen* pixels when selection completes.
     region_selected = pyqtSignal(int, int, int, int)
@@ -21,8 +23,12 @@ class RegionSelector(QWidget):
     # Emitted when the overlay closes (whether selection succeeded or not).
     selection_done = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, screen: Optional[QScreen] = None, parent=None):
         super().__init__(parent)
+        self._screen = screen or QApplication.screenAt(QCursor.pos())
+        if self._screen is None:
+            self._screen = QApplication.primaryScreen()
+
         # Frameless, stays on top, translucent background
         self.setWindowFlags(
             Qt.FramelessWindowHint
@@ -33,11 +39,15 @@ class RegionSelector(QWidget):
         self.setMouseTracking(True)  # smooth tracking even without button held
         self.setCursor(QCursor(Qt.CrossCursor))
 
-        # Span the virtual desktop (all screens)
-        geo = QRect()
-        for screen in QApplication.screens():
-            geo = geo.united(screen.geometry())
-        self.setGeometry(geo)
+        # Keep the overlay on a single screen. On Windows, one translucent
+        # top-level window spanning the virtual desktop can receive input only
+        # on a small part of another monitor when DPI/scaling differs.
+        if self._screen is not None:
+            self.winId()
+            handle = self.windowHandle()
+            if handle is not None:
+                handle.setScreen(self._screen)
+            self.setGeometry(self._screen.geometry())
 
         self._origin = QPoint()
         self._current = QPoint()
@@ -94,12 +104,15 @@ class RegionSelector(QWidget):
                 # Qt reports logical pixels; mss needs physical pixels
                 screen = QApplication.screenAt(top_left)
                 if screen is None:
-                    screen = QApplication.primaryScreen()
+                    screen = self._screen or QApplication.primaryScreen()
                 dpr = screen.devicePixelRatio()
+                screen_geo = screen.geometry()
+                physical_x = screen_geo.x() + (top_left.x() - screen_geo.x()) * dpr
+                physical_y = screen_geo.y() + (top_left.y() - screen_geo.y()) * dpr
 
                 self.region_selected.emit(
-                    int(top_left.x() * dpr),
-                    int(top_left.y() * dpr),
+                    int(physical_x),
+                    int(physical_y),
                     int(rect.width() * dpr),
                     int(rect.height() * dpr),
                 )

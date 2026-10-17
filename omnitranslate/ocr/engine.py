@@ -2,7 +2,7 @@
 OCR engine — PaddleOCR PP-OCRv4.
 
 Uses PaddleOCR 3.4+ (backed by PaddleX) for state-of-the-art text
-recognition.  Supports Chinese, English, Japanese and 80+ other languages.
+recognition.  Supports the languages listed in ``_LANG_MAP``.
 Models are stored locally in the project directory (controlled by
 ``PADDLE_PDX_CACHE_HOME`` environment variable set in ``run.py``).
 """
@@ -31,10 +31,17 @@ _LANG_MAP = {
     "pt": "pt",
     "ru": "ru",
     "ar": "ar",
+    "it": "it",
+    "vi": "vi",
+    "id": "id",
+    "hi": "hi",
+    "th": "th",
 }
 
 # PP-OCRv4 only ships models for these languages; everything else uses v3.
 _V4_LANGUAGES = {"ch", "en"}
+# Languages with no v3/v4 model in PaddleOCR — only PP-OCRv5 covers them.
+_V5_LANGUAGES = {"th"}
 
 
 class OCREngine:
@@ -58,7 +65,12 @@ class OCREngine:
     def _get_ocr(self, lang: str) -> "PaddleOCR":
         """Get or create a PaddleOCR instance for *lang*."""
         if lang not in self._ocr_instances:
-            version = "PP-OCRv4" if lang in _V4_LANGUAGES else "PP-OCRv3"
+            if lang in _V4_LANGUAGES:
+                version = "PP-OCRv4"
+            elif lang in _V5_LANGUAGES:
+                version = "PP-OCRv5"
+            else:
+                version = "PP-OCRv3"
             self._ocr_instances[lang] = PaddleOCR(
                 lang=lang,
                 ocr_version=version,
@@ -72,8 +84,9 @@ class OCREngine:
         """Switch OCR language model based on a source-language code."""
         paddle_lang = _LANG_MAP.get(source_lang, "ch")
         if paddle_lang != self._current_lang:
-            self._current_lang = paddle_lang
+            # Load first: if the model fails, keep the previous language
             self._get_ocr(paddle_lang)
+            self._current_lang = paddle_lang
 
     def recognize(self, image: np.ndarray) -> str:
         """Extract text from an image.

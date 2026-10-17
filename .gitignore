@@ -25,3 +25,5 @@ venv/
 Thumbs.db
 Desktop.ini
 .DS_Store
+# App log (windowed exe)
+omnitranslate.log
