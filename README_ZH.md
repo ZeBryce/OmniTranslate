@@ -25,7 +25,7 @@ OmniTranslate 可以捕获屏幕上的任意区域，通过 PaddleOCR 持续提�
 ## 系统要求
 
 - Windows 10 / 11
-- Python 3.10+（在 3.13 上测试通过）
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)（`winget install --id=astral-sh.uv -e`）—— 它会自动下载 Python 3.13，无需另外安装 Python
 - 互联网连接（仅翻译需要；OCR 完全离线工作）
 - 可选：DeepL / DeepSeek / OpenAI 或其他 OpenAI 兼容服务的 API 密钥
 
@@ -35,22 +35,22 @@ OmniTranslate 可以捕获屏幕上的任意区域，通过 PaddleOCR 持续提�
 git clone https://github.com/Edolance/OmniTranslate.git
 cd OmniTranslate
 
-# 在项目文件夹内创建 venv\ 并安装依赖
+# 在项目文件夹内创建 .venv\ 并按锁定版本安装依赖
 setup.bat
 ```
 
+依赖写在 `pyproject.toml` 里，具体版本锁定在 `uv.lock` 中，每次安装得到的版本都完全一致。
 所有脚本都使用相对于项目文件夹的路径，项目可以克隆或移动到任意位置。也可以手动安装：
 
 ```bash
-python -m venv venv
-.\venv\Scripts\activate
-python -m pip install -r requirements.txt
+uv venv --relocatable --managed-python
+uv sync --locked
 ```
 
 可选：提前下载 OCR 模型（否则首次使用时自动下载）：
 
 ```bash
-.\venv\Scripts\python.exe scripts\download_models.py
+uv run scripts\download_models.py
 ```
 
 ### 翻译引擎
@@ -82,10 +82,10 @@ API key 按用户保存在 Windows 注册表（`HKCU\Software\OmniTranslate`）�
 run.bat
 ```
 
-或在已激活 venv 的终端中：
+或者：
 
 ```bash
-python run.py
+uv run run.py
 ```
 
 ### 独立 exe

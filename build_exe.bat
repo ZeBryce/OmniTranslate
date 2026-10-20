@@ -4,13 +4,14 @@ rem All paths are relative to this script. Run setup.bat first.
 setlocal
 pushd "%~dp0"
 
-if not exist "venv\Scripts\python.exe" (
-    echo venv not found. Run setup.bat first.
+if not exist ".venv\Scripts\python.exe" (
+    echo .venv not found. Run setup.bat first.
     goto :error
 )
 
-"venv\Scripts\python.exe" -m pip install "pyinstaller>=6.10" || goto :error
-"venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean OmniTranslate.spec || goto :error
+rem Make sure the locked versions (incl. the dev group with PyInstaller) are installed
+uv sync --locked || goto :error
+".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean OmniTranslate.spec || goto :error
 
 set "OUT=dist\OmniTranslate"
 

@@ -5,8 +5,8 @@ The app downloads models on first use anyway; run this to fetch them ahead
 of time (e.g. before going offline).
 
 Usage (from the project folder):
-    venv\\Scripts\\python.exe scripts\\download_models.py            # zh + en
-    venv\\Scripts\\python.exe scripts\\download_models.py ja ko fr   # extra languages
+    uv run scripts\\download_models.py            # zh + en
+    uv run scripts\\download_models.py ja ko fr   # extra languages
 """
 
 import os

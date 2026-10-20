@@ -8,7 +8,7 @@ dist/
 build/
 
 # Virtual environment
-venv/
+.venv/
 
 # PaddleOCR model cache (~82MB, auto-downloaded on first run)
 .paddleocr/
@@ -27,3 +27,7 @@ Desktop.ini
 .DS_Store
 # App log (windowed exe)
 omnitranslate.log
+
+# Local-only notes (kept on this PC, not published)
+agents.md
+bug_fixes.md

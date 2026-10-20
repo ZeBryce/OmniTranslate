@@ -25,7 +25,7 @@ via PaddleOCR, and translates it in real-time using a streaming LLM.
 ## Requirements
 
 - Windows 10 / 11
-- Python 3.10+ (tested on 3.13)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (`winget install --id=astral-sh.uv -e`) — it downloads Python 3.13 itself, no separate Python install needed
 - Internet connection (for translation; OCR works fully offline)
 - Optional: an API key for DeepL / DeepSeek / OpenAI / another OpenAI-compatible service
 
@@ -35,23 +35,23 @@ via PaddleOCR, and translates it in real-time using a streaming LLM.
 git clone https://github.com/Edolance/OmniTranslate.git
 cd OmniTranslate
 
-# Creates venv\ inside the project folder and installs dependencies
+# Creates .venv\ inside the project folder and installs the locked dependencies
 setup.bat
 ```
 
-All scripts use paths relative to the project folder, so it can be cloned or
-moved anywhere. To set it up by hand instead:
+Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`, so every
+install gets exactly the same versions. All scripts use paths relative to the
+project folder, so it can be cloned or moved anywhere. To set it up by hand:
 
 ```bash
-python -m venv venv
-.\venv\Scripts\activate
-python -m pip install -r requirements.txt
+uv venv --relocatable --managed-python
+uv sync --locked
 ```
 
 Optionally pre-download OCR models (otherwise they download on first use):
 
 ```bash
-.\venv\Scripts\python.exe scripts\download_models.py
+uv run scripts\download_models.py
 ```
 
 ### Translation Engine
@@ -86,10 +86,10 @@ into these settings, but it is no longer required.
 run.bat
 ```
 
-or, with the venv activated:
+or:
 
 ```bash
-python run.py
+uv run run.py
 ```
 
 ### Standalone exe

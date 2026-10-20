@@ -5,7 +5,7 @@ Converts the Markdown to styled HTML, then prints it with headless
 Microsoft Edge (preinstalled on Windows 10/11).
 
 Usage (from the project folder):
-    venv\\Scripts\\python.exe scripts\\make_pdf.py
+    uv run scripts\\make_pdf.py
 """
 
 import os

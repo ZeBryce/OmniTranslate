@@ -1,20 +1,30 @@
 @echo off
-rem Create the project-local venv and install dependencies.
+rem Create the project-local .venv with uv and install the locked dependencies.
 rem All paths are relative to this script, so the folder can live anywhere.
 setlocal
 pushd "%~dp0"
 
-if not exist "venv\Scripts\python.exe" (
-    echo Creating virtual environment in venv\ ...
-    python -m venv venv || goto :error
+where uv >nul 2>&1
+if errorlevel 1 (
+    echo uv is not installed. Install it first, for example:
+    echo     winget install --id=astral-sh.uv -e
+    echo or see https://docs.astral.sh/uv/getting-started/installation/
+    goto :error
 )
 
-"venv\Scripts\python.exe" -m pip install --upgrade pip || goto :error
-"venv\Scripts\python.exe" -m pip install -r requirements.txt || goto :error
+rem Relocatable venv: activate scripts and .exe launchers use relative paths.
+rem uv downloads its own Python (version in .python-version) if needed.
+if not exist ".venv\Scripts\python.exe" (
+    echo Creating virtual environment in .venv\ ...
+    uv venv --relocatable --managed-python || goto :error
+)
+
+rem Install exactly the versions in uv.lock
+uv sync --locked || goto :error
 
 if not exist ".env" (
     echo.
-    echo NOTE: create a .env file here with OPENAI_API_KEY and OPENAI_BASE_URL.
+    echo Pick a translation engine and enter its key on the app's Engine tab.
 )
 
 echo.

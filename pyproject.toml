@@ -1,0 +1,30 @@
+[project]
+name = "omnitranslate"
+version = "1.1.0"
+description = "Real-time screen OCR and translation tool for Windows"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "PyQt5>=5.15",
+    "mss>=9.0",
+    "numpy>=1.24",
+    "paddlepaddle>=3.0",
+    "paddleocr>=3.0",
+    "openai>=1.0",
+    "requests>=2.28",
+    "python-dotenv>=1.0",
+    "pynput>=1.7",
+]
+
+[dependency-groups]
+# Installed by `uv sync` by default; only needed to build the exe / PDFs
+dev = [
+    "pyinstaller>=6.10",
+    "markdown-it-py>=3.0",  # scripts/make_pdf.py
+]
+
+[tool.uv]
+# An application run from the project folder (run.py), not an installable package
+package = false
+# Windows-only app: resolve and lock for Windows only
+environments = ["sys_platform == 'win32'"]
